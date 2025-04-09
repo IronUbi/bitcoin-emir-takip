@@ -1,5 +1,4 @@
 name: Bitcoin Emir Takip
-
 on:
   schedule:
     # Her 4 saatte bir çalıştır (çok sık istek yapmamak için)
@@ -7,11 +6,9 @@ on:
   
   # Manuel tetikleme için workflow_dispatch ekleyin
   workflow_dispatch:
-
 # İzinleri açıkça belirtin
 permissions:
   contents: write
-
 jobs:
   collect-orders:
     runs-on: ubuntu-latest
