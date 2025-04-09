@@ -2,8 +2,8 @@ name: Bitcoin Emir Takip
 
 on:
   schedule:
-    # Her 1 saatte bir çalıştır
-    - cron: '0 */1 * * *'
+    # Her 2 saatte bir çalıştır
+    - cron: '0 */2 * * *'
   
   # Manuel tetikleme için workflow_dispatch ekleyin
   workflow_dispatch:
@@ -30,12 +30,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Emir defteri verilerini çek
+    - name: Emir defteri verilerini kazı
       run: python main.py
-      # API anahtarları eklemek isterseniz aşağıdaki yorum satırlarını kaldırın
-      # env:
-      #   BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
-      #   BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
     
     - name: Değişiklikleri GitHub'a kaydet
       run: |
