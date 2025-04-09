@@ -273,8 +273,6 @@ def okx_emir_defteri_kazima():
         print(f"OKX kazıma sırasında hata: {str(e)}")
         return None
 
-# Diğer borsalar için de benzer şekilde proxy ile istekler ekleyebilirsiniz...
-
 # Tüm borsalardan veri kazıma ve kaydetme
 def veri_kaydet():
     """Tüm borsalardan veri kazıma ve kaydetme"""
@@ -298,12 +296,7 @@ def veri_kaydet():
     tum_veriler = []
     basarili_istek_sayisi = 0
     
-    # Önce alternatif veri kaynağını dene (her durumda çalışacak bir kaynak)
-    alt_veri = alternatif_bitcoin_fiyat_verileri()
-    if alt_veri:
-        tum_veriler.append(alt_veri)
-        basarili_istek_sayisi += 1
-        print("Alternatif veri kaynağından Bitcoin verisi alındı")
+    # Sadece gerçek borsa verilerini kullanacağız
     
     # Ana borsaları dene
     kazima_fonksiyonlari = {
