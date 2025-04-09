@@ -28,10 +28,11 @@ jobs:
         
     - name: Emir defteri verilerini çek
       run: python main.py
-      env:
-        # Opsiyonel: API anahtarları ekleyebilirsiniz
-        # BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
-        # BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
+      # API anahtarları eklemek isterseniz aşağıdaki yorum satırlarını kaldırın ve
+      # GitHub Secrets'ta ilgili anahtarları tanımlayın
+      # env:
+      #   BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+      #   BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
     
     - name: Değişiklikleri GitHub'a kaydet
       run: |
