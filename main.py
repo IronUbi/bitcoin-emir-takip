@@ -17,7 +17,12 @@ FREE_PROXIES = [
     "92.118.232.74:80",
     "74.205.128.200:80",
     "198.199.86.11:3128",
-    "178.128.156.227:3128"
+    "178.128.156.227:3128",
+    # Daha fazla güncel proxy ekleyin
+    "51.159.115.233:3128",
+    "95.56.254.139:3128",
+    "3.95.126.111:80",
+    "165.227.81.97:9995"
 ]
 
 # Rastgele proxy seç
@@ -33,7 +38,10 @@ def rastgele_user_agent():
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'
     ]
     return random.choice(user_agents)
 
@@ -83,7 +91,7 @@ def proxy_request(url, headers=None, method='get', proxy=None, timeout=15):
             if response.status_code == 200:
                 return response
         except Exception as e:
-            print(f"Proxy ile istek başarısız: {str(e)}")
+            print(f"Proxy ile istek başarısız ({proxy}): {str(e)}")
     
     # Proxy başarısız olursa veya proxy yoksa, normal istek yap
     try:
@@ -194,6 +202,30 @@ def bybit_emir_defteri_kazima():
                     print(f"Bybit API yanıtı ayrıştırılamadı: {str(e)}")
                     continue
         
+        # Bybit alternatif endpoint deneyelim
+        try:
+            alt_url = "https://api.bybit.com/derivatives/v3/public/order-book/L2?category=linear&symbol=BTCUSDT"
+            proxy = rastgele_proxy()
+            response = proxy_request(alt_url, headers=json_headers(), proxy=proxy)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                
+                if 'result' in data and 'b' in data['result'] and 'a' in data['result']:
+                    result = data['result']
+                    bids = [[float(item[0]), float(item[1])] for item in result.get('b', [])[:10]]
+                    asks = [[float(item[0]), float(item[1])] for item in result.get('a', [])[:10]]
+                    
+                    return {
+                        'borsa': 'bybit',
+                        'sembol': 'BTCUSDT',
+                        'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'alis_emirleri': bids,
+                        'satis_emirleri': asks
+                    }
+        except Exception as e:
+            print(f"Bybit alternatif API de başarısız: {str(e)}")
+        
         print("Tüm Bybit istekleri başarısız oldu.")
         return None
     
@@ -228,6 +260,26 @@ def coinbase_emir_defteri_kazima():
             }
         else:
             print(f"Coinbase API yanıtı başarısız: {response.status_code if response else 'Yanıt yok'}")
+            
+            # Alternatif endpoint deneyelim
+            alt_url = "https://api.pro.coinbase.com/products/BTC-USD/book?level=2"
+            proxy = rastgele_proxy()
+            alt_response = proxy_request(alt_url, headers=json_headers(), proxy=proxy)
+            
+            if alt_response and alt_response.status_code == 200:
+                data = alt_response.json()
+                
+                bids = [[float(item[0]), float(item[1])] for item in data.get('bids', [])[:10]]
+                asks = [[float(item[0]), float(item[1])] for item in data.get('asks', [])[:10]]
+                
+                return {
+                    'borsa': 'coinbase',
+                    'sembol': 'BTC-USD',
+                    'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'alis_emirleri': bids,
+                    'satis_emirleri': asks
+                }
+            
             return None
     
     except Exception as e:
@@ -264,6 +316,28 @@ def okx_emir_defteri_kazima():
                 }
             else:
                 print("OKX API yanıtı beklenen formatta değil")
+                
+            # Alternatif endpoint deneyelim
+            alt_url = "https://www.okx.com/api/v5/market/books?instId=BTC-USDT&sz=10" 
+            proxy = rastgele_proxy()
+            alt_response = proxy_request(alt_url, headers=json_headers(), proxy=proxy)
+            
+            if alt_response and alt_response.status_code == 200:
+                data = alt_response.json()
+                
+                if 'data' in data and len(data['data']) > 0:
+                    orderbook = data['data'][0]
+                    
+                    bids = [[float(item[0]), float(item[1])] for item in orderbook.get('bids', [])[:10]]
+                    asks = [[float(item[0]), float(item[1])] for item in orderbook.get('asks', [])[:10]]
+                    
+                    return {
+                        'borsa': 'okx',
+                        'sembol': 'BTC-USDT',
+                        'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'alis_emirleri': bids,
+                        'satis_emirleri': asks
+                    }
         else:
             print(f"OKX API yanıtı başarısız: {response.status_code if response else 'Yanıt yok'}")
         
@@ -271,6 +345,170 @@ def okx_emir_defteri_kazima():
     
     except Exception as e:
         print(f"OKX kazıma sırasında hata: {str(e)}")
+        return None
+
+# Bitget emir defteri kazıma
+def bitget_emir_defteri_kazima():
+    print("Bitget verilerini kazıma...")
+    try:
+        # Bitget API endpoint
+        url = "https://api.bitget.com/api/mix/v1/market/depth?symbol=BTCUSDT&limit=10"
+        
+        proxy = rastgele_proxy()
+        response = proxy_request(url, headers=json_headers(), proxy=proxy)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            
+            # Emir defteri verilerini al
+            if 'data' in data and 'asks' in data['data'] and 'bids' in data['data']:
+                orderbook = data['data']
+                
+                bids = [[float(item[0]), float(item[1])] for item in orderbook.get('bids', [])[:10]]
+                asks = [[float(item[0]), float(item[1])] for item in orderbook.get('asks', [])[:10]]
+                
+                # Sonuçları döndür
+                return {
+                    'borsa': 'bitget',
+                    'sembol': 'BTCUSDT',
+                    'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'alis_emirleri': bids,
+                    'satis_emirleri': asks
+                }
+            else:
+                print("Bitget API yanıtı beklenen formatta değil")
+                
+        # Alternatif endpoint deneyelim
+        alt_url = "https://api.bitget.com/api/spot/v1/market/depth?symbol=BTCUSDT_SPBL&type=step0"
+        proxy = rastgele_proxy()
+        alt_response = proxy_request(alt_url, headers=json_headers(), proxy=proxy)
+        
+        if alt_response and alt_response.status_code == 200:
+            data = alt_response.json()
+            
+            if 'data' in data and 'asks' in data['data'] and 'bids' in data['data']:
+                orderbook = data['data']
+                
+                bids = [[float(item[0]), float(item[1])] for item in orderbook.get('bids', [])[:10]]
+                asks = [[float(item[0]), float(item[1])] for item in orderbook.get('asks', [])[:10]]
+                
+                return {
+                    'borsa': 'bitget',
+                    'sembol': 'BTCUSDT_SPBL',
+                    'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'alis_emirleri': bids,
+                    'satis_emirleri': asks
+                }
+                
+        print("Tüm Bitget istekleri başarısız oldu.")
+        return None
+    
+    except Exception as e:
+        print(f"Bitget kazıma sırasında hata: {str(e)}")
+        return None
+
+# MEXC emir defteri kazıma
+def mexc_emir_defteri_kazima():
+    print("MEXC verilerini kazıma...")
+    try:
+        # MEXC API endpoint
+        url = "https://api.mexc.com/api/v3/depth?symbol=BTCUSDT&limit=10"
+        
+        proxy = rastgele_proxy()
+        response = proxy_request(url, headers=json_headers(), proxy=proxy)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            
+            # Emir defteri verilerini al
+            bids = [[float(item[0]), float(item[1])] for item in data.get('bids', [])[:10]]
+            asks = [[float(item[0]), float(item[1])] for item in data.get('asks', [])[:10]]
+            
+            # Sonuçları döndür
+            return {
+                'borsa': 'mexc',
+                'sembol': 'BTCUSDT',
+                'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'alis_emirleri': bids,
+                'satis_emirleri': asks
+            }
+                
+        print("MEXC istekleri başarısız oldu.")
+        return None
+    
+    except Exception as e:
+        print(f"MEXC kazıma sırasında hata: {str(e)}")
+        return None
+
+# Gate.io emir defteri kazıma
+def gateio_emir_defteri_kazima():
+    print("Gate.io verilerini kazıma...")
+    try:
+        # Gate.io API endpoint
+        url = "https://api.gateio.ws/api/v4/spot/order_book?currency_pair=BTC_USDT&limit=10"
+        
+        proxy = rastgele_proxy()
+        response = proxy_request(url, headers=json_headers(), proxy=proxy)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            
+            # Emir defteri verilerini al
+            bids = [[float(item[0]), float(item[1])] for item in data.get('bids', [])[:10]]
+            asks = [[float(item[0]), float(item[1])] for item in data.get('asks', [])[:10]]
+            
+            # Sonuçları döndür
+            return {
+                'borsa': 'gateio',
+                'sembol': 'BTC_USDT',
+                'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'alis_emirleri': bids,
+                'satis_emirleri': asks
+            }
+                
+        print("Gate.io istekleri başarısız oldu.")
+        return None
+    
+    except Exception as e:
+        print(f"Gate.io kazıma sırasında hata: {str(e)}")
+        return None
+
+# KuCoin emir defteri kazıma
+def kucoin_emir_defteri_kazima():
+    print("KuCoin verilerini kazıma...")
+    try:
+        # KuCoin API endpoint
+        url = "https://api.kucoin.com/api/v1/market/orderbook/level2_100?symbol=BTC-USDT"
+        
+        proxy = rastgele_proxy()
+        response = proxy_request(url, headers=json_headers(), proxy=proxy)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            
+            # Emir defteri verilerini al
+            if 'data' in data:
+                orderbook = data['data']
+                
+                bids = [[float(item[0]), float(item[1])] for item in orderbook.get('bids', [])[:10]]
+                asks = [[float(item[0]), float(item[1])] for item in orderbook.get('asks', [])[:10]]
+                
+                # Sonuçları döndür
+                return {
+                    'borsa': 'kucoin',
+                    'sembol': 'BTC-USDT',
+                    'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'alis_emirleri': bids,
+                    'satis_emirleri': asks
+                }
+            else:
+                print("KuCoin API yanıtı beklenen formatta değil")
+                
+        print("KuCoin istekleri başarısız oldu.")
+        return None
+    
+    except Exception as e:
+        print(f"KuCoin kazıma sırasında hata: {str(e)}")
         return None
 
 # Tüm borsalardan veri kazıma ve kaydetme
@@ -296,15 +534,16 @@ def veri_kaydet():
     tum_veriler = []
     basarili_istek_sayisi = 0
     
-    # Sadece gerçek borsa verilerini kullanacağız
-    
-    # Ana borsaları dene
+    # Tüm borsalar için kazıma fonksiyonları
     kazima_fonksiyonlari = {
         'binance': binance_emir_defteri_kazima,
         'bybit': bybit_emir_defteri_kazima,
         'coinbase': coinbase_emir_defteri_kazima,
-        'okx': okx_emir_defteri_kazima
-        # Diğer borsalar için de fonksiyonlar eklenebilir
+        'okx': okx_emir_defteri_kazima,
+        'bitget': bitget_emir_defteri_kazima,
+        'mexc': mexc_emir_defteri_kazima,
+        'gateio': gateio_emir_defteri_kazima,
+        'kucoin': kucoin_emir_defteri_kazima
     }
     
     # Her borsayı dene
@@ -331,6 +570,7 @@ def veri_kaydet():
         with open(dosya_adi, 'w') as f:
             json.dump(tum_veriler, f, indent=2)
         print(f"Tüm veriler {dosya_adi} dosyasına kaydedildi")
+        print(f"Başarıyla veri alınan borsa sayısı: {basarili_istek_sayisi}/{len(kazima_fonksiyonlari)}")
     else:
         print("Hiçbir borsadan veri alınamadı, dosya kaydedilmedi")
     
