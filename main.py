@@ -156,47 +156,7 @@ def binance_emir_defteri_kazima():
     except Exception as e:
         print(f"Binance kazıma sırasında hata: {str(e)}")
         return None
-
-# Ücretsiz API'ler kullanarak alternatif veri kaynakları
-def alternatif_bitcoin_fiyat_verileri():
-    """Ücretsiz API'ler kullanarak Bitcoin fiyat verilerini çek"""
-    try:
-        # CoinGecko API
-        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&include_24hr_change=true"
         
-        proxy = rastgele_proxy()
-        response = proxy_request(url, headers=json_headers(), proxy=proxy)
-        
-        if response and response.status_code == 200:
-            data = response.json()
-            
-            if 'bitcoin' in data:
-                bitcoin_data = data['bitcoin']
-                price = bitcoin_data.get('usd', 0)
-                
-                # Yapay bir emir defteri oluştur - gerçek değil, sadece fiyat bilgisi
-                # Gerçek emir defteri yerine sadece mevcut fiyat gösterilecek
-                bid_price = price * 0.999  # %0.1 altında
-                ask_price = price * 1.001  # %0.1 üstünde
-                
-                # Yapay emir defteri
-                bids = [[bid_price, 1.0], [bid_price * 0.999, 2.0], [bid_price * 0.998, 3.0]]
-                asks = [[ask_price, 1.0], [ask_price * 1.001, 2.0], [ask_price * 1.002, 3.0]]
-                
-                return {
-                    'borsa': 'coingecko',
-                    'sembol': 'BTC/USD',
-                    'zaman': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'alis_emirleri': bids,
-                    'satis_emirleri': asks,
-                    'not': 'Bu veri gerçek emir defteri değil, CoinGecko fiyat verilerinden yapay olarak oluşturulmuştur.'
-                }
-    
-    except Exception as e:
-        print(f"Alternatif veri kaynağı hatası: {str(e)}")
-    
-    return None
-
 # API anahtarı gerektirmeyen Bybit alternatif yöntemi
 def bybit_emir_defteri_kazima():
     print("Bybit verilerini kazıma...")
