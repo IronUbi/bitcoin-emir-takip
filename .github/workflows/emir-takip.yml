@@ -8,6 +8,10 @@ on:
   # Manuel tetikleme için workflow_dispatch ekleyin
   workflow_dispatch:
 
+# İzinleri açıkça belirtin
+permissions:
+  contents: write
+
 jobs:
   collect-orders:
     runs-on: ubuntu-latest
@@ -28,8 +32,7 @@ jobs:
         
     - name: Emir defteri verilerini çek
       run: python main.py
-      # API anahtarları eklemek isterseniz aşağıdaki yorum satırlarını kaldırın ve
-      # GitHub Secrets'ta ilgili anahtarları tanımlayın
+      # API anahtarları eklemek isterseniz aşağıdaki yorum satırlarını kaldırın
       # env:
       #   BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
       #   BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
@@ -38,6 +41,6 @@ jobs:
       run: |
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'
-        git add -A
+        git add data/
         git diff --quiet && git diff --staged --quiet || git commit -m "Otomatik veri güncelleme: $(date)"
         git push
