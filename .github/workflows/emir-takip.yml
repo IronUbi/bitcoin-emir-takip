@@ -2,8 +2,8 @@ name: Bitcoin Emir Takip
 
 on:
   schedule:
-    # Her 2 saatte bir çalıştır
-    - cron: '0 */2 * * *'
+    # Her 4 saatte bir çalıştır (çok sık istek yapmamak için)
+    - cron: '0 */4 * * *'
   
   # Manuel tetikleme için workflow_dispatch ekleyin
   workflow_dispatch:
@@ -19,6 +19,8 @@ jobs:
     steps:
     - name: Kodu indir
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Tam git geçmişini al
       
     - name: Python 3.10 kur
       uses: actions/setup-python@v4
@@ -32,6 +34,7 @@ jobs:
         
     - name: Emir defteri verilerini kazı
       run: python main.py
+      continue-on-error: true  # Hata olsa bile devam et
     
     - name: Değişiklikleri GitHub'a kaydet
       run: |
